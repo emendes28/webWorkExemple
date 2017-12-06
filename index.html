@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Web Worker</title>
+</head>
+
+<body>
+    <p> Adaptado de : http://pixijs.io/examples/#/spine/spineboy.js</p>
+    <button id="executeGet">Get API sem Web Worker</button>
+    <button id="executeGetThreadMain">Get API sem Web Worker na Thread principal </button>
+    <button id="executeGetwebWorker">Get API com Web Worker</button>
+    <form>
+        <label>Teste com e sem execução de service worker</label>
+        <input type="textbox">
+    </form>
+    <div class="loading">
+        <img src="http://a.top4top.net/p_1990j031.gif" alt="Loading">
+    </div>
+    <div class="mouse original"></div>
+<!-- 8 -->
+<div class="loader loader--style8" title="7">
+    <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+       width="240px" height="30px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50;" xml:space="preserve">
+      <rect x="0" y="10" width="4" height="10" fill="#333" opacity="0.2">
+        <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.6s" repeatCount="indefinite" />
+        <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.6s" repeatCount="indefinite" />
+        <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.6s" repeatCount="indefinite" />
+      </rect>
+      <rect x="8" y="10" width="4" height="10" fill="#333"  opacity="0.2">
+        <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.6s" repeatCount="indefinite" />
+        <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" />
+        <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" />
+      </rect>
+      <rect x="16" y="10" width="4" height="10" fill="#333"  opacity="0.2">
+        <animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.6s" repeatCount="indefinite" />
+        <animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" />
+        <animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" />
+      </rect>      
+    </svg>
+  </div>
+    <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.5.1/pixi.min.js"></script>
+    <script src="pixi-spine.js"></script>
+    <script src="spineboy.js"></script>
+
+    <code id="saida"></code>
+    <script>
+        document.getElementById("executeGet").onclick = function (e) {
+            function httpGet() {
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.open("GET", 'https://www.googleapis.com/discovery/v1/apis', true); // false for synchronous request
+                xmlHttp.send(null);
+                console.log(xmlHttp.responseText);
+                return xmlHttp.responseText;
+            };
+            for(let i = 0; i< 500; i++){
+                httpGet();
+            }
+
+            document.getElementById("saida").innerHTML = "Request ok";
+        }
+
+        
+        document.getElementById("executeGetThreadMain").onclick = function (e) {
+            function httpGet() {
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.open("GET", 'https://www.googleapis.com/discovery/v1/apis', false); // false for synchronous request
+                xmlHttp.send(null);
+                console.log(xmlHttp.responseText);
+                return xmlHttp.responseText;
+            };
+            for(let i = 0; i< 500; i++){
+                httpGet();
+            }
+
+            document.getElementById("saida").innerHTML = "Request ok";
+        }
+        document.getElementById("executeGetwebWorker").onclick = function (e) {
+            if (typeof (Worker) !== "undefined") {
+                let w;
+                var channel = new MessageChannel();
+                if (typeof (w) == "undefined") {
+                    w = new Worker("webWorker.js"); 
+
+                    w.onmessage = function (event) {
+                        
+                            // Send one end of the channel to the worker
+                        w.postMessage(`Recebemos um retorno do w ${event.data.result}`, [channel.port1]);
+                        document.getElementById("saida").innerHTML = "Request ok";
+                    };
+
+                    w.onerror = function (e) {
+                        w.postMessage(`Error: Line ${e.lineno} in ${e.filename}: ${e.message}`, [channel.port1]);
+                    };
+                    //start the w
+                    w.postMessage({ command: 'getApi' });
+                }
+
+            } else {
+                document.getElementById("saida").innerHTML = "Sorry! No Web Worker support.";
+            }
+        }
+    </script>
+</body>
+
+</html>
